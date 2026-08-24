@@ -40,6 +40,14 @@ input[type=range]:focus {
     transform: translateY(0) !important;
     opacity: 1 !important;
 }
+
+/* Fix desktop modal centering */
+@media (min-width: 640px) {
+    .modal-open {
+        transform: translate(-50%, -50%) !important;
+    }
+}
+
 .overlay-open {
     display: block !important;
     opacity: 1 !important;
