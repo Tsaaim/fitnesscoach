@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="de" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#0f172a">
+    <title>Simon's Fitness Hub</title>
+    
+    <!-- PWA Setup -->
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/svg+xml" href="assets/icon.svg">
+    <link rel="apple-touch-icon" href="assets/icon-192.png">
+
+    <!-- Fonts: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        darkbg: '#0f172a', // slate-900
+                        cardbg: '#1e293b', // slate-800
+                        emerald: {
+                            500: '#10b981',
+                            600: '#059669',
+                        },
+                        cyan: {
+                            500: '#06b6d4',
+                            600: '#0891b2',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="css/style.css">
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="bg-darkbg text-slate-200 font-sans antialiased overflow-x-hidden selection:bg-emerald-500 selection:text-white">
+
+    <!-- App Container -->
+    <div class="max-w-md mx-auto min-h-screen bg-darkbg sm:border-x sm:border-slate-800 relative pb-20">
+        
+        <!-- Header -->
+        <header class="p-5 pt-8 bg-cardbg/50 backdrop-blur-md sticky top-0 z-40 border-b border-slate-700/50">
+            <div class="flex justify-between items-center mb-4">
+                <div>
+                    <h1 class="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-emerald-400 to-cyan-400">
+                        Simon's Progress
+                    </h1>
+                    <div class="flex items-center mt-1 text-sm text-slate-400">
+                        <i data-lucide="shield-check" class="w-4 h-4 mr-1 text-emerald-500"></i>
+                        <span>Coach: Matthias</span>
+                    </div>
+                </div>
+                <button id="btn-sync-modal" class="p-2 rounded-full bg-slate-800 hover:bg-slate-700 transition">
+                    <i data-lucide="settings" class="w-5 h-5 text-slate-300"></i>
+                </button>
+            </div>
+            
+            <div class="flex space-x-3">
+                <button id="btn-open-checkin" class="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white py-2.5 rounded-xl font-semibold transition flex justify-center items-center shadow-lg shadow-emerald-500/20">
+                    <i data-lucide="plus-circle" class="w-5 h-5 mr-2"></i> Check-in
+                </button>
+                <a href="#workout-hub" class="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-200 py-2.5 rounded-xl font-semibold transition flex justify-center items-center border border-slate-700">
+                    <i data-lucide="play" class="w-5 h-5 mr-2 text-cyan-400"></i> Workout
+                </a>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="p-5 space-y-8">
+            
+            <!-- Dashboard KPIs -->
+            <section id="kpi-dashboard">
+                <div class="grid grid-cols-2 gap-4 mb-6">
+                    <!-- Weight Card -->
+                    <div class="bg-cardbg rounded-2xl p-4 border border-slate-700/50 relative overflow-hidden group">
+                        <div class="absolute top-0 right-0 p-3 opacity-20 group-hover:opacity-40 transition"><i data-lucide="scale" class="w-8 h-8 text-emerald-400"></i></div>
+                        <p class="text-xs text-slate-400 font-medium uppercase tracking-wider mb-1">Gewicht</p>
+                        <h2 class="text-3xl font-bold text-white mb-1"><span id="kpi-weight">--</span> <span class="text-lg text-slate-400 font-normal">kg</span></h2>
+                        <p class="text-sm font-medium text-emerald-400 flex items-center">
+                            <i data-lucide="trending-down" class="w-3 h-3 mr-1"></i> <span id="kpi-weight-diff">0.0 kg</span>
+                        </p>
+                    </div>
+
+                    <!-- Waist Card -->
+                    <div class="bg-cardbg rounded-2xl p-4 border border-slate-700/50 relative overflow-hidden group">
+                        <div class="absolute top-0 right-0 p-3 opacity-20 group-hover:opacity-40 transition"><i data-lucide="ruler" class="w-8 h-8 text-cyan-400"></i></div>
+                        <p class="text-xs text-slate-400 font-medium uppercase tracking-wider mb-1">Bauch</p>
+                        <h2 class="text-3xl font-bold text-white mb-1"><span id="kpi-waist">--</span> <span class="text-lg text-slate-400 font-normal">cm</span></h2>
+                        <p class="text-sm font-medium text-cyan-400 flex items-center">
+                            <i data-lucide="arrow-down-right" class="w-3 h-3 mr-1"></i> Start: 110cm
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Milestone Bar -->
+                <div class="bg-cardbg rounded-2xl p-5 border border-slate-700/50">
+                    <div class="flex justify-between items-end mb-3">
+                        <h3 class="font-semibold text-slate-200">Meilensteine</h3>
+                        <span class="text-xs text-slate-400 font-medium">Ziel: 80 kg</span>
+                    </div>
+                    
+                    <div class="relative h-2 w-full bg-slate-700 rounded-full mb-6">
+                        <div id="milestone-progress-bar" class="absolute top-0 left-0 h-full bg-gradient-to-r from-emerald-500 to-cyan-500 rounded-full transition-all duration-1000 ease-out" style="width: 0%;"></div>
+                        
+                        <!-- Milestone Markers (Positioned via JS) -->
+                        <div id="milestone-markers"></div>
+                    </div>
+                    <div id="milestone-text" class="text-sm text-center text-slate-300 font-medium">
+                        Start: 104 kg
+                    </div>
+                </div>
+            </section>
+
+            <!-- Chart Section -->
+            <section id="chart-section" class="bg-cardbg rounded-2xl p-4 border border-slate-700/50">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="font-semibold text-slate-200">Fortschritt</h3>
+                    <select id="chart-type-selector" class="bg-slate-800 text-xs text-slate-300 border border-slate-600 rounded p-1 outline-none">
+                        <option value="weight">Gewicht</option>
+                        <option value="waist">Bauchumfang</option>
+                    </select>
+                </div>
+                <div class="relative h-64 w-full">
+                    <canvas id="progressChart"></canvas>
+                </div>
+            </section>
+
+            <!-- Workout Hub -->
+            <section id="workout-hub" class="pt-4">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-bold text-white flex items-center">
+                        <i data-lucide="activity" class="w-5 h-5 mr-2 text-cyan-400"></i>
+                        Workout-Hub
+                    </h2>
+                    <div class="bg-slate-800 text-xs text-slate-300 px-2 py-1 rounded border border-slate-700">15 Min</div>
+                </div>
+                
+                <div class="bg-cardbg rounded-2xl p-5 border border-slate-700/50 shadow-lg">
+                    <p class="text-sm text-slate-400 mb-4">"Rückenstark & Gesang" – Fokus auf Gesäß, Rumpf & Atemstütze.</p>
+                    
+                    <!-- Workout Player Area -->
+                    <div id="workout-player" class="hidden">
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-xs font-semibold text-cyan-400 uppercase tracking-widest" id="workout-round-text">Runde 1 / 3</span>
+                            <span class="text-xs text-slate-400" id="workout-exercise-counter">Übung 1 / 5</span>
+                        </div>
+                        
+                        <!-- Exercise View -->
+                        <div id="workout-exercise-view" class="text-center py-6">
+                            <h3 id="workout-exercise-name" class="text-2xl font-bold text-white mb-2">Box-Squats</h3>
+                            <p id="workout-exercise-reps" class="text-emerald-400 font-semibold text-lg mb-4">10–12 Wdh.</p>
+                            <p id="workout-exercise-cue" class="text-sm text-slate-400 italic mb-8">Aus den Beinen drücken, Brust aufrecht.</p>
+                            
+                            <button id="btn-exercise-done" class="w-full bg-cyan-500 hover:bg-cyan-600 text-white py-4 rounded-xl font-bold text-lg transition shadow-lg shadow-cyan-500/20 active:scale-95">
+                                Übung erledigt <i data-lucide="check" class="inline w-5 h-5 ml-1"></i>
+                            </button>
+                        </div>
+
+                        <!-- Rest Timer View -->
+                        <div id="workout-rest-view" class="text-center py-6 hidden">
+                            <h3 class="text-xl font-bold text-slate-300 mb-2">Pause</h3>
+                            <div class="text-5xl font-black text-white mb-6 tabular-nums" id="workout-timer-display">30</div>
+                            <div class="flex space-x-3">
+                                <button id="btn-timer-skip" class="flex-1 bg-slate-700 hover:bg-slate-600 text-white py-3 rounded-xl font-semibold transition">
+                                    Überspringen
+                                </button>
+                                <button id="btn-timer-add" class="flex-1 bg-slate-800 hover:bg-slate-700 text-white py-3 rounded-xl font-semibold transition border border-slate-600">
+                                    +15 Sek
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Workout Start State -->
+                    <div id="workout-start-state" class="text-center py-4">
+                        <ul class="text-left text-sm text-slate-300 space-y-2 mb-6">
+                            <li class="flex items-start"><i data-lucide="check-circle-2" class="w-4 h-4 mr-2 text-emerald-500 mt-0.5 shrink-0"></i> 1. Box-Squats (10-12)</li>
+                            <li class="flex items-start"><i data-lucide="check-circle-2" class="w-4 h-4 mr-2 text-emerald-500 mt-0.5 shrink-0"></i> 2. Erhöhte Liegestütze (8-10)</li>
+                            <li class="flex items-start"><i data-lucide="check-circle-2" class="w-4 h-4 mr-2 text-emerald-500 mt-0.5 shrink-0"></i> 3. Glute Bridges (10-12)</li>
+                            <li class="flex items-start"><i data-lucide="check-circle-2" class="w-4 h-4 mr-2 text-emerald-500 mt-0.5 shrink-0"></i> 4. Bird Dog (8/Seite)</li>
+                            <li class="flex items-start"><i data-lucide="check-circle-2" class="w-4 h-4 mr-2 text-emerald-500 mt-0.5 shrink-0"></i> 5. Y-T-W Heben (je 6)</li>
+                        </ul>
+                        <button id="btn-start-workout" class="w-full bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-400 hover:to-cyan-400 text-white py-3.5 rounded-xl font-bold text-lg transition shadow-lg flex justify-center items-center">
+                            <i data-lucide="play-circle" class="w-6 h-6 mr-2"></i> Zirkel Starten
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Guides & Rules -->
+            <section id="guides-section" class="pt-4">
+                <h2 class="text-lg font-bold text-white mb-3 px-1">Quick Guides</h2>
+                <div class="space-y-3">
+                    <!-- Rule 1 -->
+                    <details class="bg-cardbg rounded-xl border border-slate-700/50 group overflow-hidden">
+                        <summary class="flex justify-between items-center p-4 cursor-pointer font-semibold text-slate-200 select-none">
+                            <span class="flex items-center"><i data-lucide="package" class="w-4 h-4 mr-2 text-emerald-400"></i> Kistenheben im Job</span>
+                            <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 group-open:rotate-180 transition-transform"></i>
+                        </summary>
+                        <div class="p-4 pt-0 text-sm text-slate-400 border-t border-slate-700/50 mt-1 bg-slate-800/30">
+                            <p>Kiste immer nah an den Körper ziehen. Bauch anspannen (Korsett fest). Gesäß nach hinten schieben und aus den Beinen hochdrücken. Nie mit rundem Rücken reißen!</p>
+                        </div>
+                    </details>
+                    
+                    <!-- Rule 2 -->
+                    <details class="bg-cardbg rounded-xl border border-slate-700/50 group overflow-hidden">
+                        <summary class="flex justify-between items-center p-4 cursor-pointer font-semibold text-slate-200 select-none">
+                            <span class="flex items-center"><i data-lucide="mic" class="w-4 h-4 mr-2 text-cyan-400"></i> Gesangs- & Haltungs-Cues</span>
+                            <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 group-open:rotate-180 transition-transform"></i>
+                        </summary>
+                        <div class="p-4 pt-0 text-sm text-slate-400 border-t border-slate-700/50 mt-1 bg-slate-800/30">
+                            <p>Aufrechte BWS, Zwerchfellatmung. Schultern locker lassen. Die tiefe Rumpfmuskulatur (Transversus abdominis) gibt die Stütze (Appoggio).</p>
+                        </div>
+                    </details>
+
+                    <!-- Rule 3 -->
+                    <details class="bg-cardbg rounded-xl border border-slate-700/50 group overflow-hidden">
+                        <summary class="flex justify-between items-center p-4 cursor-pointer font-semibold text-slate-200 select-none">
+                            <span class="flex items-center"><i data-lucide="apple" class="w-4 h-4 mr-2 text-red-400"></i> Die 3 Ernährungs-Hebel</span>
+                            <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 group-open:rotate-180 transition-transform"></i>
+                        </summary>
+                        <div class="p-4 pt-0 text-sm text-slate-400 border-t border-slate-700/50 mt-1 bg-slate-800/30">
+                            <ul class="list-disc pl-4 space-y-1">
+                                <li><strong>Flüssigkeit:</strong> 2.5 - 3 Liter Wasser/ungesüßter Tee.</li>
+                                <li><strong>Protein-Anker:</strong> Jede Mahlzeit enthält Protein (Ei, Quark, Tofu, etc.)</li>
+                                <li><strong>Smart Snacking:</strong> Statt Schoki beim Lernen -> Beeren, Nüsse, Gemüsesticks.</li>
+                            </ul>
+                        </div>
+                    </details>
+                </div>
+            </section>
+            
+        </main>
+    </div>
+
+    <!-- Modals Overlay -->
+    <div id="modal-overlay" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 hidden opacity-0 transition-opacity duration-300"></div>
+
+    <!-- Check-In Modal -->
+    <div id="modal-checkin" class="fixed inset-x-0 bottom-0 sm:bottom-auto sm:top-1/2 sm:left-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:w-[400px] bg-cardbg rounded-t-3xl sm:rounded-3xl border-t sm:border border-slate-700/50 shadow-2xl z-50 hidden translate-y-full sm:translate-y-12 sm:opacity-0 transition-all duration-300 max-h-[90vh] overflow-y-auto">
+        <div class="p-6">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-bold text-white">Wöchentliches Check-in</h2>
+                <button id="btn-close-checkin" class="text-slate-400 hover:text-white p-1"><i data-lucide="x" class="w-6 h-6"></i></button>
+            </div>
+            
+            <form id="checkin-form" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-slate-300 mb-1">Datum</label>
+                    <input type="date" id="input-date" required class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500" />
+                </div>
+                
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-300 mb-1">Gewicht (kg)</label>
+                        <input type="number" id="input-weight" step="0.1" min="70" max="150" required placeholder="104.0" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500" />
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-300 mb-1">Bauch (cm)</label>
+                        <input type="number" id="input-waist" step="1" min="70" max="150" required placeholder="110" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500" />
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-slate-300 mb-1">Workouts geschafft (0-3)</label>
+                    <input type="range" id="input-workouts" min="0" max="3" value="0" class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-emerald-500">
+                    <div class="flex justify-between text-xs text-slate-400 px-1 mt-1 font-mono">
+                        <span>0</span><span>1</span><span>2</span><span>3</span>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-slate-300 mb-1">Notiz (Optional)</label>
+                    <textarea id="input-note" rows="2" placeholder="Gute Woche, Rücken top..." class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 resize-none"></textarea>
+                </div>
+
+                <div class="pt-4 flex flex-col space-y-3">
+                    <button type="submit" class="w-full bg-emerald-500 hover:bg-emerald-600 text-white py-3 rounded-xl font-bold transition flex justify-center items-center shadow-lg shadow-emerald-500/20">
+                        <i data-lucide="save" class="w-5 h-5 mr-2"></i> Speichern
+                    </button>
+                    <!-- WhatsApp Share Button shows after save -->
+                    <button type="button" id="btn-share-whatsapp" class="hidden w-full bg-[#25D366] hover:bg-[#1ebd5b] text-white py-3 rounded-xl font-bold transition flex justify-center items-center shadow-lg">
+                        <i data-lucide="send" class="w-5 h-5 mr-2"></i> Für Matthias kopieren
+                    </button>
+                </div>
+            </form>
+            
+            <div class="mt-6 border-t border-slate-700 pt-4">
+                <h3 class="text-sm font-semibold text-slate-300 mb-3">Vergangene Einträge</h3>
+                <div id="history-list" class="space-y-2 max-h-40 overflow-y-auto pr-1">
+                    <!-- History items injected via JS -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sync/Settings Modal -->
+    <div id="modal-settings" class="fixed inset-x-0 bottom-0 sm:bottom-auto sm:top-1/2 sm:left-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:w-[350px] bg-cardbg rounded-t-3xl sm:rounded-3xl border-t sm:border border-slate-700/50 shadow-2xl z-50 hidden translate-y-full sm:translate-y-12 sm:opacity-0 transition-all duration-300">
+        <div class="p-6">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-bold text-white">Daten & Backup</h2>
+                <button id="btn-close-settings" class="text-slate-400 hover:text-white p-1"><i data-lucide="x" class="w-6 h-6"></i></button>
+            </div>
+            
+            <div class="space-y-3">
+                <button id="btn-export-data" class="w-full bg-slate-800 border border-slate-700 hover:bg-slate-700 text-white py-3 rounded-xl font-semibold transition flex justify-center items-center">
+                    <i data-lucide="download" class="w-5 h-5 mr-2 text-cyan-400"></i> JSON Export
+                </button>
+                <label class="w-full bg-slate-800 border border-slate-700 hover:bg-slate-700 text-white py-3 rounded-xl font-semibold transition flex justify-center items-center cursor-pointer">
+                    <i data-lucide="upload" class="w-5 h-5 mr-2 text-emerald-400"></i> JSON Import
+                    <input type="file" id="input-import-data" class="hidden" accept=".json">
+                </label>
+                <div class="border-t border-slate-700/50 my-4"></div>
+                <button id="btn-demo-data" class="w-full bg-slate-900 border border-red-900/30 hover:bg-red-900/20 text-slate-400 hover:text-red-400 py-2 rounded-xl text-sm font-medium transition">
+                    Demo-Daten laden
+                </button>
+                <button id="btn-clear-data" class="w-full bg-slate-900 border border-red-900/30 hover:bg-red-900/20 text-slate-400 hover:text-red-400 py-2 rounded-xl text-sm font-medium transition">
+                    Alle Daten löschen
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/storage.js"></script>
+    <script src="js/chart.js"></script>
+    <script src="js/workout.js"></script>
+    <script src="js/app.js"></script>
+
+    <script>
+        // Initialize Lucide Icons
+        lucide.createIcons();
+        
+        // PWA Service Worker Registration
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js').catch(err => {
+                    console.log('SW registration failed: ', err);
+                });
+            });
+        }
+    </script>
+</body>
+</html>
